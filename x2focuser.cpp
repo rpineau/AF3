@@ -38,11 +38,9 @@ X2Focuser::X2Focuser(const char* pszDisplayName,
 
     // Read in settings
     if (m_pIniUtil) {
-        m_Af3Controller.setPosLimit(m_pIniUtil->readInt(PARENT_KEY, POS_LIMIT, 0));
     }
-     
-    
-	m_Af3Controller.SetSerxPointer(m_pSerX);
+
+    m_Af3Controller.SetSerxPointer(m_pSerX);
     m_Af3Controller.setSleeper(m_pSleeper);
 }
 
@@ -110,7 +108,7 @@ double X2Focuser::driverInfoVersion(void) const
 
 void X2Focuser::deviceInfoNameShort(BasicStringInterface& str) const
 {
-    str="AAF2";
+    str="AF3";
 }
 
 void X2Focuser::deviceInfoNameLong(BasicStringInterface& str) const				
@@ -120,7 +118,7 @@ void X2Focuser::deviceInfoNameLong(BasicStringInterface& str) const
 
 void X2Focuser::deviceInfoDetailedDescription(BasicStringInterface& str) const		
 {
-	str = "AAF2 Controller";
+	str = "AF3 Controller";
 }
 
 void X2Focuser::deviceInfoFirmwareVersion(BasicStringInterface& str)				
@@ -139,7 +137,7 @@ void X2Focuser::deviceInfoFirmwareVersion(BasicStringInterface& str)
 
 void X2Focuser::deviceInfoModel(BasicStringInterface& str)							
 {
-    str="AAF2";
+    str="AF3";
 }
 
 #pragma mark - LinkInterface
@@ -191,10 +189,10 @@ int	X2Focuser::execModalSettingsDialog(void)
     X2GUIInterface*					ui = uiutil.X2UI();
     X2GUIExchangeInterface*			dx = NULL;//Comes after ui is loaded
     bool bPressedOK = false;
-    bool bLimitEnabled = false;
     int nPosition = 0;
     int nPosLimit = 0;
-
+    int nTmp;
+    bool bReverse;
     mUiEnabled = false;
 
     if (NULL == ui)
@@ -214,22 +212,50 @@ int	X2Focuser::execModalSettingsDialog(void)
         if(nErr)
             return nErr;
         dx->setEnabled("newPos", true);
-        dx->setEnabled("pushButtonSet2", true);
+        dx->setEnabled("pushButton", true);
         dx->setPropertyInt("newPos", "value", nPosition);
+
         dx->setEnabled("posLimit", true);
-        dx->setPropertyInt("posLimit", "value", m_Af3Controller.getPosLimit());
+        dx->setEnabled("pushButton_2", true);
+        nErr = m_Af3Controller.getPosLimit(nPosLimit);
+        dx->setPropertyInt("posLimit", "value", nPosLimit);
+        
+        dx->setEnabled("comboBox", true);
+        nErr = m_Af3Controller.getStepSize(nTmp);
+        if(nErr)
+            return nErr;
+        dx->setCurrentIndex("comboBox", nTmp-1);
+
+        dx->setEnabled("comboBox_2", true);
+        nErr = m_Af3Controller.getSpeed(nTmp);
+        if(nErr)
+            return nErr;
+        dx->setCurrentIndex("comboBox_2", nTmp-1);
+        
+        dx->setEnabled("moveMult", true);
+        nErr = m_Af3Controller.getMoveCurrentMultiplier(nTmp);
+        dx->setPropertyInt("moveMult", "value", nTmp);
+
+        dx->setEnabled("holdMult", true);
+        nErr = m_Af3Controller.getHoldCurrentMultiplier(nTmp);
+        dx->setPropertyInt("holdMult", "value", nTmp);
+
+        dx->setEnabled("checkBox", true);
+        nErr = m_Af3Controller.getReverseEnable(bReverse);
+        dx->setChecked("checkBox", bReverse?1:0);
     }
     else {
         // disable all controls
         dx->setEnabled("newPos", false);
-        dx->setPropertyInt("newPos", "value", 0);
+        dx->setEnabled("pushButton", false);
         dx->setEnabled("posLimit", false);
-        dx->setEnabled("reverseDir", false);
-        dx->setEnabled("pushButtonSet2", false);
+        dx->setEnabled("pushButton_2", false);
+        dx->setEnabled("comboBox", false);
+        dx->setEnabled("comboBox_2", false);
+        dx->setEnabled("moveMult", false);
+        dx->setEnabled("holdMult", false);
+        dx->setEnabled("checkBox", false);
     }
-
-	
-
 
     //Display the user interface
     mUiEnabled = true;
@@ -240,12 +266,14 @@ int	X2Focuser::execModalSettingsDialog(void)
     //Retreive values from the user interface
     if (bPressedOK) {
         nErr = SB_OK;
-        // get limit option
-        bLimitEnabled = dx->isChecked("limitEnable");
-        dx->propertyInt("posLimit", "value", nPosLimit);
-        m_Af3Controller.setPosLimit(nPosLimit);
-        // save values to config
-        nErr |= m_pIniUtil->writeInt(PARENT_KEY, POS_LIMIT, nPosLimit);
+        if(m_bLinked){
+            // update move current multiplier
+            dx->propertyInt("moveMult", "value", nTmp);
+            m_Af3Controller.setMoveCurrentMultiplier(nTmp);
+            // update hold current multiplier
+            dx->propertyInt("holdMult", "value", nTmp);
+            m_Af3Controller.setHoldCurrentMultiplier(nTmp);
+        }
     }
     return nErr;
 }
@@ -254,10 +282,27 @@ void X2Focuser::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
 {
     int nErr = SB_OK;
     int nTmpVal;
+    int nIndex;
+    bool bTmp;
+    
     char szErrorMessage[LOG_BUFFER_SIZE];
 
+    if(!m_bLinked)
+        return;
+
+    if(!mUiEnabled)
+        return;
+    
+    if (!strcmp(pszEvent, "on_timer")) {
+        // update move current multiplier
+        uiex->propertyInt("moveMult", "value", nTmpVal);
+        m_Af3Controller.setMoveCurrentMultiplier(nTmpVal);
+        // update hold current multiplier
+        uiex->propertyInt("holdMult", "value", nTmpVal);
+        m_Af3Controller.setHoldCurrentMultiplier(nTmpVal);
+    }
     // new position
-    if (!strcmp(pszEvent, "on_pushButton_clicked")) {
+    else if (!strcmp(pszEvent, "on_pushButton_clicked")) {
         uiex->propertyInt("newPos", "value", nTmpVal);
         nErr = m_Af3Controller.syncMotorPosition(nTmpVal);
         if(nErr) {
@@ -267,7 +312,45 @@ void X2Focuser::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
         }
     }
 
+    else if (!strcmp(pszEvent, "on_pushButton_2_clicked")) {
+        uiex->propertyInt("posLimit", "value", nTmpVal);
+        nErr = m_Af3Controller.setPosLimit(nTmpVal);
+        if(nErr) {
+            snprintf(szErrorMessage, LOG_BUFFER_SIZE, "Error setting new limit : Error %d", nErr);
+            uiex->messageBox("Set New Limit", szErrorMessage);
+            return;
+        }
+    }
 
+    else if (!strcmp(pszEvent, "on_comboBox_currentIndexChanged")) {
+        nIndex = uiex->currentIndex("comboBox");
+        nErr = m_Af3Controller.setStepSize(nIndex+1);
+        if(nErr) {
+            snprintf(szErrorMessage, LOG_BUFFER_SIZE, "Error setting new step size : Error %d", nErr);
+            uiex->messageBox("Set New Step Size", szErrorMessage);
+            return;
+        }
+    }
+
+    else if (!strcmp(pszEvent, "on_comboBox_2_currentIndexChanged")) {
+        nIndex = uiex->currentIndex("comboBox_2");
+        nErr = m_Af3Controller.setSpeed(nIndex+1);
+        if(nErr) {
+            snprintf(szErrorMessage, LOG_BUFFER_SIZE, "Error setting new speed : Error %d", nErr);
+            uiex->messageBox("Set New Speed", szErrorMessage);
+            return;
+        }
+    }
+    
+    else if (!strcmp(pszEvent, "on_checkBox_stateChanged")) {
+        bTmp = uiex->isChecked("checkBox")==1?true:false;
+        nErr = m_Af3Controller.setReverseEnable(bTmp);
+        if(nErr) {
+            snprintf(szErrorMessage, LOG_BUFFER_SIZE, "Error changing direction : Error %d", nErr);
+            uiex->messageBox("Change Direction", szErrorMessage);
+            return;
+        }
+    }
 }
 
 #pragma mark - FocuserGotoInterface2
@@ -293,14 +376,15 @@ int	X2Focuser::focMinimumLimit(int& nMinLimit)
 
 int	X2Focuser::focMaximumLimit(int& nPosLimit)			
 {
-
+    int nErr = SB_OK;
+    
     if(!m_bLinked)
         return NOT_CONNECTED;
 
     X2MutexLocker ml(GetMutex());
-    nPosLimit = m_Af3Controller.getPosLimit();
+    m_Af3Controller.getPosLimit(nPosLimit);
 
-	return SB_OK;
+	return nErr;
 }
 
 int	X2Focuser::focAbort()								

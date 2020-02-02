@@ -22,10 +22,8 @@ class BasicIniUtilInterface;
 class TickCountInterface;
 
 
-#define PARENT_KEY			"AAF2"
+#define PARENT_KEY			"AAF3"
 #define CHILD_KEY_PORTNAME	"PortName"
-#define POS_LIMIT           "PosLimit"
-#define POS_LIMIT_ENABLED   "PosLimitEnable"
 
 #if defined(SB_WIN_BUILD)
 #define DEF_PORT_NAME					"COM1"

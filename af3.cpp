@@ -295,7 +295,7 @@ int CAf3Controller::isMotorMoving(bool &bMoving)
     return nErr;
 }
 
-#pragma mark getters and setters
+#pragma mark - getters and setters
 
 int CAf3Controller::getFirmwareVersion(char *pszVersion, int nStrMaxLen)
 {
@@ -370,10 +370,8 @@ int CAf3Controller::syncMotorPosition(int nPos)
 		return ERR_COMMNOLINK;
 
     snprintf(szCmd, SERIAL_BUFFER_SIZE, "[SPOS%d]", nPos);
-    printf("setting new pos to %d [ %s ]\n",nPos, szCmd);
     
     nErr = sendCommand(szCmd, szResp, SERIAL_BUFFER_SIZE);
-    printf("[syncMotorPosition] szResp = %s\n", szResp);
     if(nErr)
         return nErr;
 
@@ -385,7 +383,7 @@ int CAf3Controller::syncMotorPosition(int nPos)
 
 
 
-int CAf3Controller::getPosLimit()
+int CAf3Controller::getPosLimit(int &nLimit)
 {
     int nErr = PLUGIN_OK;
     char szResp[SERIAL_BUFFER_SIZE];
@@ -398,8 +396,9 @@ int CAf3Controller::getPosLimit()
         return 0;
 
     m_nPosLimit = atoi(szResp);
+    nLimit = m_nPosLimit;
 
-    return m_nPosLimit;
+    return nErr;
 }
 
 int CAf3Controller::setPosLimit(int nLimit)
@@ -412,10 +411,8 @@ int CAf3Controller::setPosLimit(int nLimit)
         return ERR_COMMNOLINK;
 
     snprintf(szCmd, SERIAL_BUFFER_SIZE, "[SMXM%d]", nLimit);
-    printf("setting new pos limit to %d [ %s ]\n",nLimit, szCmd);
     
     nErr = sendCommand(szCmd, szResp, SERIAL_BUFFER_SIZE);
-    printf("[setPosLimit] szResp = %s\n", szResp);
     if(nErr)
         return nErr;
 
@@ -426,9 +423,196 @@ int CAf3Controller::setPosLimit(int nLimit)
     return nErr;
 }
 
+int CAf3Controller::getStepSize(int &nStepSize)
+{
+    int nErr = PLUGIN_OK;
+    char szResp[SERIAL_BUFFER_SIZE];
+
+    if(!m_bIsConnected)
+        return ERR_COMMNOLINK;
+
+    nErr = sendCommand("[GSTP]", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return 0;
+
+    nStepSize = atoi(szResp);
+
+    return nErr;
+}
+
+int CAf3Controller::setStepSize(int nStepSize)
+{
+    int nErr = PLUGIN_OK;
+    char szCmd[SERIAL_BUFFER_SIZE];
+    char szResp[SERIAL_BUFFER_SIZE];
+
+    if(!m_bIsConnected)
+        return ERR_COMMNOLINK;
+
+    snprintf(szCmd, SERIAL_BUFFER_SIZE, "[SSTP%d]", nStepSize);
+    
+    nErr = sendCommand(szCmd, szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
+
+    if(!strstr(szResp,"OK"))
+        nErr = ERR_CMDFAILED;
+
+    return nErr;
+}
+
+int CAf3Controller::getSpeed(int &nSpeed)
+{
+    int nErr = PLUGIN_OK;
+    char szResp[SERIAL_BUFFER_SIZE];
+
+    if(!m_bIsConnected)
+        return ERR_COMMNOLINK;
+
+    nErr = sendCommand("[GSPD]", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return 0;
+
+    nSpeed = atoi(szResp);
+
+    return nErr;
+}
+
+int CAf3Controller::setSpeed(int nSpeed)
+{
+    int nErr = PLUGIN_OK;
+    char szCmd[SERIAL_BUFFER_SIZE];
+    char szResp[SERIAL_BUFFER_SIZE];
+
+    if(!m_bIsConnected)
+        return ERR_COMMNOLINK;
+
+    snprintf(szCmd, SERIAL_BUFFER_SIZE, "[SSPD%d]", nSpeed);
+    
+    nErr = sendCommand(szCmd, szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
+
+    if(!strstr(szResp,"OK"))
+        nErr = ERR_CMDFAILED;
+
+    return nErr;
+}
+
+int CAf3Controller::getMoveCurrentMultiplier(int &nMoveCurrentMultiplier)
+{
+    int nErr = PLUGIN_OK;
+    char szResp[SERIAL_BUFFER_SIZE];
+
+    if(!m_bIsConnected)
+        return ERR_COMMNOLINK;
+
+    nErr = sendCommand("[GMMM]", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return 0;
+
+    nMoveCurrentMultiplier = atoi(szResp);
+
+    return nErr;
+}
+
+int CAf3Controller::setMoveCurrentMultiplier(int nMoveCurrentMultiplier)
+{
+    int nErr = PLUGIN_OK;
+    char szCmd[SERIAL_BUFFER_SIZE];
+    char szResp[SERIAL_BUFFER_SIZE];
+
+    if(!m_bIsConnected)
+        return ERR_COMMNOLINK;
+
+    snprintf(szCmd, SERIAL_BUFFER_SIZE, "[SMMM%d]", nMoveCurrentMultiplier);
+    
+    nErr = sendCommand(szCmd, szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
+
+    if(!strstr(szResp,"OK"))
+        nErr = ERR_CMDFAILED;
+
+    return nErr;
+}
+
+int CAf3Controller::getHoldCurrentMultiplier(int &nHoldCurrentMultiplier)
+{
+    int nErr = PLUGIN_OK;
+    char szResp[SERIAL_BUFFER_SIZE];
+
+    if(!m_bIsConnected)
+        return ERR_COMMNOLINK;
+
+    nErr = sendCommand("[GMHM]", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return 0;
+
+    nHoldCurrentMultiplier = atoi(szResp);
+
+    return nErr;
+}
+
+int CAf3Controller::setHoldCurrentMultiplier(int nHoldCurrentMultiplier)
+{
+    int nErr = PLUGIN_OK;
+    char szCmd[SERIAL_BUFFER_SIZE];
+    char szResp[SERIAL_BUFFER_SIZE];
+
+    if(!m_bIsConnected)
+        return ERR_COMMNOLINK;
+
+    snprintf(szCmd, SERIAL_BUFFER_SIZE, "[SMHM%d]", nHoldCurrentMultiplier);
+    
+    nErr = sendCommand(szCmd, szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
+
+    if(!strstr(szResp,"OK"))
+        nErr = ERR_CMDFAILED;
+
+    return nErr;
+}
+
+int CAf3Controller::getReverseEnable(bool &bEnable)
+{
+    int nErr = PLUGIN_OK;
+    char szResp[SERIAL_BUFFER_SIZE];
+
+    if(!m_bIsConnected)
+        return ERR_COMMNOLINK;
+
+    nErr = sendCommand("[GREV]", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return 0;
+
+    bEnable = atoi(szResp)==1?true:false;
+
+    return nErr;
+}
+
+int CAf3Controller::setReverseEnable(bool bEnable)
+{
+    int nErr = PLUGIN_OK;
+    char szCmd[SERIAL_BUFFER_SIZE];
+    char szResp[SERIAL_BUFFER_SIZE];
+
+    if(!m_bIsConnected)
+        return ERR_COMMNOLINK;
+
+    snprintf(szCmd, SERIAL_BUFFER_SIZE, "[SREV%d]", bEnable?1:0);
+    nErr = sendCommand(szCmd, szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
+
+    if(!strstr(szResp,"OK"))
+        nErr = ERR_CMDFAILED;
+
+    return nErr;}
 
 
-#pragma mark command and response functions
+#pragma mark - command and response functions
 
 int CAf3Controller::sendCommand(const char *pszszCmd, char *pszResult, int nResultMaxLen)
 {
@@ -467,7 +651,6 @@ int CAf3Controller::sendCommand(const char *pszszCmd, char *pszResult, int nResu
 		fprintf(Logfile, "[%s] CAf3Controller::sendCommand response \"%s\"\n", timestamp, szResp);
 		fflush(Logfile);
 #endif
-        // printf("Got response : %s\n",resp);
 
         strncpy(pszResult, szResp, nResultMaxLen);
 #ifdef PLUGIN_DEBUG

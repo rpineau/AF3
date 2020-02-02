@@ -25,7 +25,7 @@
 
 #include "StopWatch.h"
 
-#define PLUGIN_DEBUG 2
+// #define PLUGIN_DEBUG 2
 
 #define DRIVER_VERSION      1.0
 
@@ -72,9 +72,25 @@ public:
     int         getTemperature(double &dTemperature);
     int         getPosition(int &nPosition);
     int         syncMotorPosition(int nPos);
-    int         getPosLimit(void);
+    int         getPosLimit(int &nLimit);
     int         setPosLimit(int nLimit);
     
+    int         getStepSize(int &nStepSize);
+    int         setStepSize(int nStepSize);
+    
+    int         getSpeed(int &nSpeed);
+    int         setSpeed(int nSpeed);
+    
+    int         getMoveCurrentMultiplier(int &nMoveCurrentMultiplier);
+    int         setMoveCurrentMultiplier(int nMoveCurrentMultiplier);
+
+    int         getHoldCurrentMultiplier(int &nHoldCurrentMultiplier);
+    int         setHoldCurrentMultiplier(int nHoldCurrentMultiplier);
+
+    
+    int         getReverseEnable(bool &bEnable);
+    int         setReverseEnable(bool bEnable);
+
 protected:
 
     int             sendCommand(const char *pszCmd, char *pszResult, int nResultMaxLen);
