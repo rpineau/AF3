@@ -138,7 +138,13 @@ int CAf3Controller::Connect(const char *pszPort)
 
 void CAf3Controller::Disconnect()
 {
+    char szResp[SERIAL_BUFFER_SIZE];
+    
     if(m_bIsConnected && m_pSerx) {
+        // force position to be saved to eeprom
+        sendCommand("[SIDE1]", szResp, SERIAL_BUFFER_SIZE);
+        m_pSleeper->sleep(10);
+        sendCommand("[SIDE180000]", szResp, SERIAL_BUFFER_SIZE);
         m_pSerx->close();
     }
  
