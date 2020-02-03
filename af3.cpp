@@ -84,7 +84,7 @@ int CAf3Controller::Connect(const char *pszPort)
 #endif
 
     // 115.2K 8N1
-    nErr = m_pSerx->open(pszPort, 115200, SerXInterface::B_NOPARITY, "-DTR_CONTROL 1");
+    nErr = m_pSerx->open(pszPort, 115200, SerXInterface::B_NOPARITY, "-DTR_COQNTROL 1 -RTS_CONTROL 1");
     if( nErr == 0)
         m_bIsConnected = true;
     else
@@ -130,16 +130,19 @@ int CAf3Controller::Connect(const char *pszPort)
 		fflush(Logfile);
 	#endif
 
-	if(m_bResetOnConnect)
-		resetDevice();
+    getPosition(m_nPosLimit);
+    setMaxMouvement(m_nPosLimit); // we want to move as we see fit
+	// if(m_bResetOnConnect)
+	// 	resetDevice();
 
 	return nErr;
 }
 
 void CAf3Controller::Disconnect()
 {
-    if(m_bIsConnected && m_pSerx)
+    if(m_bIsConnected && m_pSerx) {
         m_pSerx->close();
+    }
  
 	m_bIsConnected = false;
 }
@@ -272,8 +275,10 @@ int CAf3Controller::isGoToComplete(bool &bComplete)
 int CAf3Controller::isMotorMoving(bool &bMoving)
 {
     int nErr = PLUGIN_OK;
-	
-	if(!m_bIsConnected)
+    char szResp[SERIAL_BUFFER_SIZE];
+    int nMoving;
+    
+    if(!m_bIsConnected)
 		return ERR_COMMNOLINK;
 
     bMoving = false;
@@ -282,16 +287,13 @@ int CAf3Controller::isMotorMoving(bool &bMoving)
         return nErr;
     m_MoveTimer.Reset();
     
-    nErr = getPosition(m_nCurPos);
+    nErr = sendCommand("[GMOV]", szResp, SERIAL_BUFFER_SIZE);
     if(nErr)
         return nErr;
-    
-    if(m_nLastPosition == m_nCurPos)
-        bMoving = false;
-    else {
-        m_nLastPosition = m_nCurPos;
-        bMoving = true;
-    }
+
+    nMoving = atoi(szResp);
+    bMoving = (nMoving==1);
+
     return nErr;
 }
 
@@ -391,7 +393,7 @@ int CAf3Controller::getPosLimit(int &nLimit)
     if(!m_bIsConnected)
         return ERR_COMMNOLINK;
 
-    nErr = sendCommand("[GMXM]", szResp, SERIAL_BUFFER_SIZE);
+    nErr = sendCommand("[GMXP]", szResp, SERIAL_BUFFER_SIZE);
     if(nErr)
         return 0;
 
@@ -410,7 +412,7 @@ int CAf3Controller::setPosLimit(int nLimit)
     if(!m_bIsConnected)
         return ERR_COMMNOLINK;
 
-    snprintf(szCmd, SERIAL_BUFFER_SIZE, "[SMXM%d]", nLimit);
+    snprintf(szCmd, SERIAL_BUFFER_SIZE, "[SMXP%d]", nLimit);
     
     nErr = sendCommand(szCmd, szResp, SERIAL_BUFFER_SIZE);
     if(nErr)
@@ -420,6 +422,7 @@ int CAf3Controller::setPosLimit(int nLimit)
         nErr = ERR_CMDFAILED;
 
     m_nPosLimit = nLimit;
+    setMaxMouvement(m_nPosLimit); // we want to move as we see fit
     return nErr;
 }
 
@@ -610,6 +613,45 @@ int CAf3Controller::setReverseEnable(bool bEnable)
         nErr = ERR_CMDFAILED;
 
     return nErr;}
+
+int CAf3Controller::getMaxMouvement(int &nMaxMove)
+{
+    int nErr = PLUGIN_OK;
+    char szResp[SERIAL_BUFFER_SIZE];
+
+    if(!m_bIsConnected)
+        return ERR_COMMNOLINK;
+    nErr = sendCommand("[GMXM]", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return 0;
+
+    nMaxMove = atoi(szResp);
+
+    return nErr;
+
+}
+
+int CAf3Controller::setMaxMouvement(int nMaxMove)
+{
+    int nErr = PLUGIN_OK;
+    char szCmd[SERIAL_BUFFER_SIZE];
+    char szResp[SERIAL_BUFFER_SIZE];
+
+    if(!m_bIsConnected)
+        return ERR_COMMNOLINK;
+
+    snprintf(szCmd, SERIAL_BUFFER_SIZE, "[SMXM%d]", nMaxMove);
+    
+    nErr = sendCommand(szCmd, szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
+
+    if(!strstr(szResp,"OK"))
+        nErr = ERR_CMDFAILED;
+
+    return nErr;
+
+}
 
 
 #pragma mark - command and response functions

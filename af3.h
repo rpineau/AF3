@@ -25,7 +25,7 @@
 
 #include "StopWatch.h"
 
-// #define PLUGIN_DEBUG 2
+#define PLUGIN_DEBUG 2
 
 #define DRIVER_VERSION      1.0
 
@@ -91,6 +91,9 @@ public:
     int         getReverseEnable(bool &bEnable);
     int         setReverseEnable(bool bEnable);
 
+    int         getMaxMouvement(int &nMaxMove);
+    int         setMaxMouvement(int nMaxMove);
+    
 protected:
 
     int             sendCommand(const char *pszCmd, char *pszResult, int nResultMaxLen);

@@ -243,6 +243,8 @@ int	X2Focuser::execModalSettingsDialog(void)
         dx->setEnabled("checkBox", true);
         nErr = m_Af3Controller.getReverseEnable(bReverse);
         dx->setChecked("checkBox", bReverse?1:0);
+        
+        dx->setEnabled("pushButton_3", true);
     }
     else {
         // disable all controls
@@ -255,6 +257,8 @@ int	X2Focuser::execModalSettingsDialog(void)
         dx->setEnabled("moveMult", false);
         dx->setEnabled("holdMult", false);
         dx->setEnabled("checkBox", false);
+        dx->setEnabled("pushButton_3", false);
+        
     }
 
     //Display the user interface
@@ -320,6 +324,33 @@ void X2Focuser::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
             uiex->messageBox("Set New Limit", szErrorMessage);
             return;
         }
+    }
+
+    else if (!strcmp(pszEvent, "on_pushButton_3_clicked")) {
+        m_Af3Controller.resetDevice();
+        // reload all data
+        nErr = m_Af3Controller.getPosition(nTmpVal);
+        uiex->setPropertyInt("newPos", "value", nTmpVal);
+        
+        nErr = m_Af3Controller.getPosLimit(nTmpVal);
+        uiex->setPropertyInt("posLimit", "value", nTmpVal);
+        m_Af3Controller.setMaxMouvement(nTmpVal);   // do not limit movement to arbitrary value, this break automation
+
+        nErr = m_Af3Controller.getStepSize(nTmpVal);
+        uiex->setCurrentIndex("comboBox", nTmpVal-1);
+
+        nErr = m_Af3Controller.getSpeed(nTmpVal);
+        uiex->setCurrentIndex("comboBox_2", nTmpVal-1);
+        
+        nErr = m_Af3Controller.getMoveCurrentMultiplier(nTmpVal);
+        uiex->setPropertyInt("moveMult", "value", nTmpVal);
+
+        nErr = m_Af3Controller.getHoldCurrentMultiplier(nTmpVal);
+        uiex->setPropertyInt("holdMult", "value", nTmpVal);
+
+        nErr = m_Af3Controller.getReverseEnable(bTmp);
+        uiex->setChecked("checkBox", bTmp?1:0);
+
     }
 
     else if (!strcmp(pszEvent, "on_comboBox_currentIndexChanged")) {
