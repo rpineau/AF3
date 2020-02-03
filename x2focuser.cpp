@@ -192,6 +192,7 @@ int	X2Focuser::execModalSettingsDialog(void)
     int nPosition = 0;
     int nPosLimit = 0;
     int nTmp;
+    int nIndex;
     bool bReverse;
     mUiEnabled = false;
 
@@ -222,9 +223,39 @@ int	X2Focuser::execModalSettingsDialog(void)
         
         dx->setEnabled("comboBox", true);
         nErr = m_Af3Controller.getStepSize(nTmp);
+        switch(nTmp) {
+            case 1:
+                nIndex = 0;
+                break;
+            case 2:
+                nIndex = 1;
+                break;
+            case 4:
+                nIndex = 2;
+                break;
+            case 8:
+                nIndex = 3;
+                break;
+            case 16:
+                nIndex = 4;
+                break;
+            case 32:
+                nIndex =5;
+                break;
+            case 64:
+                nIndex = 6;
+                break;
+            case 128:
+                nIndex = 7;
+                break;
+            case 256:
+                nIndex = 8;
+                break;
+        }
+
         if(nErr)
             return nErr;
-        dx->setCurrentIndex("comboBox", nTmp-1);
+        dx->setCurrentIndex("comboBox", nIndex);
 
         dx->setEnabled("comboBox_2", true);
         nErr = m_Af3Controller.getSpeed(nTmp);
@@ -354,8 +385,38 @@ void X2Focuser::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
     }
 
     else if (!strcmp(pszEvent, "on_comboBox_currentIndexChanged")) {
+        int nStepSize = 1;
         nIndex = uiex->currentIndex("comboBox");
-        nErr = m_Af3Controller.setStepSize(nIndex+1);
+        switch(nIndex) {
+            case 0:
+                nStepSize = 1;
+                break;
+            case 1:
+                nStepSize = 2;
+                break;
+            case 2:
+                nStepSize = 4;
+                break;
+            case 3:
+                nStepSize = 8;
+                break;
+            case 4:
+                nStepSize = 16;
+                break;
+            case 5:
+                nStepSize =32;
+                break;
+            case 6:
+                nStepSize = 64;
+                break;
+            case 7:
+                nStepSize = 128;
+                break;
+            case 8:
+                nStepSize = 256;
+                break;
+        }
+        nErr = m_Af3Controller.setStepSize(nStepSize);
         if(nErr) {
             snprintf(szErrorMessage, LOG_BUFFER_SIZE, "Error setting new step size : Error %d", nErr);
             uiex->messageBox("Set New Step Size", szErrorMessage);

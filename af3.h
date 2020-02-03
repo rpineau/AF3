@@ -1,9 +1,6 @@
 //
-//  AF3.h
-//  NexDome
-//
-//  Created by Rodolphe Pineau on 2017/05/30.
-//  NexDome X2 plugin
+//  Created by Rodolphe Pineau on 2020/01/10.
+//  AF3 X2 plugin
 
 #ifndef __AF3__
 #define __AF3__
@@ -98,7 +95,6 @@ protected:
 
     int             sendCommand(const char *pszCmd, char *pszResult, int nResultMaxLen);
     int             readResponse(char *pszRespBuffer, int nBufferLen);
-    int             parseResponse(char *pszRespBuffer, char *pszParsed, int nBufferLen);
 
     SerXInterface   *m_pSerx;
     SleeperInterface    *m_pSleeper;

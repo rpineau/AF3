@@ -1,8 +1,6 @@
 //
-//  nexdome.cpp
-//  NexDome X2 plugin
-//
-//  Created by Rodolphe Pineau on 6/11/2016.
+//  Created by Rodolphe Pineau on 2020/01/10.
+//  AF3 X2 plugin
 
 
 #include "af3.h"
@@ -54,8 +52,8 @@ CAf3Controller::CAf3Controller()
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [CEsattoController::CEsattoController] Version %3.2f build 2020_02_01_1605.\n", timestamp, DRIVER_VERSION);
-    fprintf(Logfile, "[%s] [CEsattoController] Constructor Called.\n", timestamp);
+    fprintf(Logfile, "[%s] [CAf3Controller::CAf3Controller] Version %3.2f build 2020_02_01_1605.\n", timestamp, DRIVER_VERSION);
+    fprintf(Logfile, "[%s] [CAf3Controller] Constructor Called.\n", timestamp);
     fflush(Logfile);
 #endif
 }
@@ -71,7 +69,8 @@ CAf3Controller::~CAf3Controller()
 int CAf3Controller::Connect(const char *pszPort)
 {
     int nErr = PLUGIN_OK;
-
+    char szResp[SERIAL_BUFFER_SIZE];
+    
     if(!m_pSerx)
         return ERR_COMMNOLINK;
 
@@ -84,7 +83,7 @@ int CAf3Controller::Connect(const char *pszPort)
 #endif
 
     // 115.2K 8N1
-    nErr = m_pSerx->open(pszPort, 115200, SerXInterface::B_NOPARITY, "-DTR_COQNTROL 1 -RTS_CONTROL 1");
+    nErr = m_pSerx->open(pszPort, 115200, SerXInterface::B_NOPARITY, "-RTS_CONTROL 1");
     if( nErr == 0)
         m_bIsConnected = true;
     else
@@ -132,9 +131,8 @@ int CAf3Controller::Connect(const char *pszPort)
 
     getPosition(m_nPosLimit);
     setMaxMouvement(m_nPosLimit); // we want to move as we see fit
-	// if(m_bResetOnConnect)
-	// 	resetDevice();
-
+    sendCommand("SBUF300", szResp, SERIAL_BUFFER_SIZE);
+    
 	return nErr;
 }
 
@@ -746,36 +744,6 @@ int CAf3Controller::readResponse(char *pszRespBuffer, int nBufferLen)
 	sResp = trim(sTmp,"()");
 	strncpy(pszRespBuffer, sResp.c_str(), SERIAL_BUFFER_SIZE);
 
-    return nErr;
-}
-
-int CAf3Controller::parseResponse(char *pszResp, char *pszParsed, int nBufferLen)
-{
-    int nErr = PLUGIN_OK;
-    std::string sSegment;
-    std::vector<std::string> svSeglist;
-    std::stringstream ssTmp(pszResp);
-    std::vector<std::string>  svParsedResp;
-
-#ifdef PEGA_DEBUG
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] CPegasusController::parseResp parsing \"%s\"\n", timestamp, pszResp);
-    fflush(Logfile);
-#endif
-    svParsedResp.clear();
-    // split the string into vector elements
-    while(std::getline(ssTmp, sSegment, ':'))
-    {
-        svSeglist.push_back(sSegment);
-    }
-    // do we have all the fields ?
-    if (svSeglist.size()<2)
-        return ERR_CMDFAILED;
-
-    svSeglist[0].erase(0, 1); // erase the first caracter.
-    strncpy(pszParsed, svSeglist[0].c_str(), nBufferLen);
     return nErr;
 }
 
