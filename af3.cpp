@@ -131,24 +131,28 @@ int CAf3Controller::Connect(const char *pszPort)
 
     getPosition(m_nPosLimit);
     setMaxMouvement(m_nPosLimit); // we want to move as we see fit
-    sendCommand("SBUF300", szResp, SERIAL_BUFFER_SIZE);
+    sendCommand("[SBUF300]", szResp, SERIAL_BUFFER_SIZE);
     
 	return nErr;
 }
 
-void CAf3Controller::Disconnect()
+int  CAf3Controller::Disconnect()
 {
+    int nErr = PLUGIN_OK;
+    
     char szResp[SERIAL_BUFFER_SIZE];
     
     if(m_bIsConnected && m_pSerx) {
         // force position to be saved to eeprom
-        sendCommand("[SIDE1]", szResp, SERIAL_BUFFER_SIZE);
-        m_pSleeper->sleep(10);
-        sendCommand("[SIDE180000]", szResp, SERIAL_BUFFER_SIZE);
+        nErr= sendCommand("[SIDE10]", szResp, SERIAL_BUFFER_SIZE);
+        m_pSleeper->sleep(20);
+        // put it back to the default value
+        nErr |= sendCommand("[SIDE180000]", szResp, SERIAL_BUFFER_SIZE);
         m_pSerx->close();
     }
  
 	m_bIsConnected = false;
+    return nErr;
 }
 
 #pragma mark - Device settings

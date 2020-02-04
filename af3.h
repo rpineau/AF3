@@ -22,7 +22,7 @@
 
 #include "StopWatch.h"
 
-#define PLUGIN_DEBUG 2
+// #define PLUGIN_DEBUG 2
 
 #define DRIVER_VERSION      1.0
 
@@ -42,7 +42,7 @@ public:
     ~CAf3Controller();
 
     int         Connect(const char *pszPort);
-    void        Disconnect(void);
+    int         Disconnect(void);
     bool        IsConnected(void) { return m_bIsConnected; };
 
     void        SetSerxPointer(SerXInterface *p) { m_pSerx = p; };

@@ -160,15 +160,17 @@ int	X2Focuser::establishLink(void)
 
 int	X2Focuser::terminateLink(void)
 {
+    int nErr = SB_OK;
+    
     if(!m_bLinked)
-        return SB_OK;
+        return nErr;
 
     X2MutexLocker ml(GetMutex());
-    m_Af3Controller.haltFocuser();
-    m_Af3Controller.Disconnect();
+    nErr = m_Af3Controller.haltFocuser();
+    nErr |= m_Af3Controller.Disconnect();
     m_bLinked = false;
 
-	return SB_OK;
+	return nErr;
 }
 
 bool X2Focuser::isLinked(void) const
@@ -340,7 +342,7 @@ void X2Focuser::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
         m_Af3Controller.setMaxMouvement(nTmpVal);   // do not limit movement to arbitrary value, this break automation
 
         nErr = m_Af3Controller.getStepSize(nTmpVal);
-		nStepSize = 2^nTmpVal;
+        nIndex = int(log2(nTmpVal));
         uiex->setCurrentIndex("comboBox", nStepSize);
 
         nErr = m_Af3Controller.getSpeed(nTmpVal);
@@ -359,7 +361,7 @@ void X2Focuser::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
 
     else if (!strcmp(pszEvent, "on_comboBox_currentIndexChanged")) {
         nIndex = uiex->currentIndex("comboBox");
-		nStepSize = 2^nIndex;
+		nStepSize = pow(2,nIndex);
         nErr = m_Af3Controller.setStepSize(nStepSize);
         if(nErr) {
             snprintf(szErrorMessage, LOG_BUFFER_SIZE, "Error setting new step size : Error %d", nErr);
