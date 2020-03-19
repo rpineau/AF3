@@ -30,8 +30,12 @@ echo "Installing in $PLUGINS_DIR/FocuserPlugIns/"
 
 cp "/tmp/AF3_X2/focuserlist deepskydadAF3.txt" "$TheSkyX_Path/Resources/Common/Miscellaneous Files/"
 if [ "$?" -ne "0" ]; then exit 1; fi
+
+rm -f "$PLUGINS_DIR/FocuserPlugIns/af3.ui"
 cp "/tmp/AF3_X2/af3.ui" "$PLUGINS_DIR/FocuserPlugIns/"
 if [ "$?" -ne "0" ]; then exit 1; fi
+
+rm -f "$PLUGINS_DIR/FocuserPlugIns/libaf3.dylib"
 cp "/tmp/AF3_X2/libaf3.dylib" "$PLUGINS_DIR/FocuserPlugIns/"
 if [ "$?" -ne "0" ]; then exit 1; fi
 
